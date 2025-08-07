@@ -2,15 +2,17 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Workout, WeightRecord, Exercise } from '@/types';
-import { loadWorkouts, saveWorkouts, loadWeights, saveWeights } from '@/utils/storage';
+import { databaseService } from '@/lib/database';
 
 interface AppContextType {
   workouts: Workout[];
   weights: WeightRecord[];
-  addWorkout: (workout: Omit<Workout, 'id' | 'createdAt'>) => void;
-  addWeight: (weight: Omit<WeightRecord, 'id' | 'createdAt'>) => void;
+  loading: boolean;
+  addWorkout: (workout: Omit<Workout, 'id' | 'createdAt'>) => Promise<void>;
+  addWeight: (weight: Omit<WeightRecord, 'id' | 'createdAt'>) => Promise<void>;
   getWorkoutsForDate: (date: string) => Workout[];
   getWeightForDate: (date: string) => WeightRecord | undefined;
+  refreshData: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -30,34 +32,46 @@ interface AppProviderProps {
 export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [weights, setWeights] = useState<WeightRecord[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    setWorkouts(loadWorkouts());
-    setWeights(loadWeights());
-  }, []);
-
-  const addWorkout = (workout: Omit<Workout, 'id' | 'createdAt'>) => {
-    const newWorkout: Workout = {
-      ...workout,
-      id: Date.now().toString(),
-      createdAt: new Date(),
-    };
-    
-    const updatedWorkouts = [...workouts, newWorkout];
-    setWorkouts(updatedWorkouts);
-    saveWorkouts(updatedWorkouts);
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [workoutsData, weightsData] = await Promise.all([
+        databaseService.getWorkouts(),
+        databaseService.getWeights(),
+      ]);
+      setWorkouts(workoutsData);
+      setWeights(weightsData);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const addWeight = (weight: Omit<WeightRecord, 'id' | 'createdAt'>) => {
-    const newWeight: WeightRecord = {
-      ...weight,
-      id: Date.now().toString(),
-      createdAt: new Date(),
-    };
-    
-    const updatedWeights = [...weights, newWeight];
-    setWeights(updatedWeights);
-    saveWeights(updatedWeights);
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const addWorkout = async (workout: Omit<Workout, 'id' | 'createdAt'>) => {
+    try {
+      await databaseService.addWorkout(workout);
+      await loadData(); // データを再読み込み
+    } catch (error) {
+      console.error('Error adding workout:', error);
+      throw error;
+    }
+  };
+
+  const addWeight = async (weight: Omit<WeightRecord, 'id' | 'createdAt'>) => {
+    try {
+      await databaseService.addWeight(weight);
+      await loadData(); // データを再読み込み
+    } catch (error) {
+      console.error('Error adding weight:', error);
+      throw error;
+    }
   };
 
   const getWorkoutsForDate = (date: string): Workout[] => {
@@ -68,13 +82,19 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     return weights.find(weight => weight.date === date);
   };
 
+  const refreshData = async () => {
+    await loadData();
+  };
+
   const value: AppContextType = {
     workouts,
     weights,
+    loading,
     addWorkout,
     addWeight,
     getWorkoutsForDate,
     getWeightForDate,
+    refreshData,
   };
 
   return (

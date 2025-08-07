@@ -52,18 +52,23 @@ export default function WorkoutPage() {
     ));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!exercise) return;
 
     const today = format(new Date(), 'yyyy-MM-dd');
     
-    addWorkout({
-      exercise,
-      sets: sets.filter(set => set.weight && set.reps),
-      date: today,
-    });
+    try {
+      await addWorkout({
+        exercise,
+        sets: sets.filter(set => set.weight && set.reps),
+        date: today,
+      });
 
-    router.push('/');
+      router.push('/');
+    } catch (error) {
+      console.error('Error saving workout:', error);
+      // エラーハンドリングを追加できます
+    }
   };
 
   const handleBack = () => {

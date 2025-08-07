@@ -20,7 +20,7 @@ export default function WeightPage() {
   const [weight, setWeight] = useState(todayWeight?.weight.toString() || '');
   const [error, setError] = useState('');
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const weightValue = parseFloat(weight);
     
     if (!weight || isNaN(weightValue)) {
@@ -33,12 +33,17 @@ export default function WeightPage() {
       return;
     }
 
-    addWeight({
-      weight: weightValue,
-      date: today,
-    });
+    try {
+      await addWeight({
+        weight: weightValue,
+        date: today,
+      });
 
-    router.push('/');
+      router.push('/');
+    } catch (error) {
+      console.error('Error saving weight:', error);
+      setError('保存中にエラーが発生しました');
+    }
   };
 
   const handleBack = () => {
