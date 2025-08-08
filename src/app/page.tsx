@@ -5,16 +5,97 @@ import { Header } from '@/components/layout/Header';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useAppContext } from '@/context/AppContext';
+import { useLineAuth } from '@/hooks/useLineAuth';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { Play, Scale, Calendar, History, TrendingUp } from 'lucide-react';
 
+// SSRを無効にする
+export const dynamic = 'force-dynamic';
+
 export default function HomePage() {
+  const { user, loading, initialized, login, logout } = useLineAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+          <p className="text-gray-600">読み込み中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!initialized) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">アプリの初期化に失敗しました</p>
+          <Button onClick={() => window.location.reload()}>
+            再読み込み
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header title="フィットログ" />
+        
+        <main className="p-6 flex items-center justify-center min-h-[calc(100vh-80px)]">
+          <div className="text-center space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-black mb-2">FitLog</h2>
+              <p className="text-gray-600">シンプル筋トレログ</p>
+            </div>
+            
+            <div className="space-y-4">
+              <p className="text-gray-600">LINEアカウントでログインしてください</p>
+              <Button 
+                onClick={login}
+                className="w-full h-14 text-lg font-medium bg-green-500 hover:bg-green-600"
+              >
+                LINEでログイン
+              </Button>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <Header title="フィットログ" />
       
       <main className="p-6 space-y-6">
+        {/* ユーザー情報 */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            {user.pictureUrl && (
+              <img 
+                src={user.pictureUrl} 
+                alt={user.displayName}
+                className="w-10 h-10 rounded-full"
+              />
+            )}
+            <div>
+              <p className="font-medium text-black">{user.displayName}</p>
+              <p className="text-sm text-gray-600">ようこそ！</p>
+            </div>
+          </div>
+          <Button 
+            onClick={logout}
+            variant="outline"
+            size="sm"
+          >
+            ログアウト
+          </Button>
+        </div>
+
         {/* サブタイトル */}
         <div className="text-center mb-8">
           <p className="text-gray-600 text-sm">シンプル筋トレログ</p>

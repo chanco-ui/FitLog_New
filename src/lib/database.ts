@@ -1,16 +1,23 @@
 import { supabase } from './supabase';
 import { Workout, WeightRecord } from '@/types';
 
-// 仮のユーザーID（後で認証システムに置き換え）
-const TEMP_USER_ID = 'temp_user_123';
+// ユーザーIDを動的に取得する関数
+const getUserId = (): string => {
+  // LINE認証が利用可能な場合はLINEユーザーIDを使用
+  if (typeof window !== 'undefined' && window.liff) {
+    return window.liff.getProfile?.()?.then((profile: any) => profile.userId) || 'temp_user_123';
+  }
+  return 'temp_user_123';
+};
 
 export const databaseService = {
   // ワークアウト関連
   async getWorkouts(): Promise<Workout[]> {
+    const userId = await getUserId();
     const { data, error } = await supabase
       .from('workouts')
       .select('*')
-      .eq('user_id', TEMP_USER_ID)
+      .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -34,10 +41,11 @@ export const databaseService = {
   },
 
   async addWorkout(workout: Omit<Workout, 'id' | 'createdAt'>): Promise<void> {
+    const userId = await getUserId();
     const { error } = await supabase
       .from('workouts')
       .insert({
-        user_id: TEMP_USER_ID,
+        user_id: userId,
         exercise_id: workout.exercise.id,
         exercise_name: workout.exercise.name,
         exercise_muscle: workout.exercise.muscle,
@@ -53,10 +61,11 @@ export const databaseService = {
   },
 
   async getWorkoutsForDate(date: string): Promise<Workout[]> {
+    const userId = await getUserId();
     const { data, error } = await supabase
       .from('workouts')
       .select('*')
-      .eq('user_id', TEMP_USER_ID)
+      .eq('user_id', userId)
       .eq('date', date)
       .order('created_at', { ascending: false });
 
@@ -82,10 +91,11 @@ export const databaseService = {
 
   // 体重関連
   async getWeights(): Promise<WeightRecord[]> {
+    const userId = await getUserId();
     const { data, error } = await supabase
       .from('weights')
       .select('*')
-      .eq('user_id', TEMP_USER_ID)
+      .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -102,10 +112,11 @@ export const databaseService = {
   },
 
   async addWeight(weight: Omit<WeightRecord, 'id' | 'createdAt'>): Promise<void> {
+    const userId = await getUserId();
     const { error } = await supabase
       .from('weights')
       .insert({
-        user_id: TEMP_USER_ID,
+        user_id: userId,
         weight: weight.weight,
         date: weight.date,
       });
@@ -117,10 +128,11 @@ export const databaseService = {
   },
 
   async getWeightForDate(date: string): Promise<WeightRecord | undefined> {
+    const userId = await getUserId();
     const { data, error } = await supabase
       .from('weights')
       .select('*')
-      .eq('user_id', TEMP_USER_ID)
+      .eq('user_id', userId)
       .eq('date', date)
       .single();
 
