@@ -14,7 +14,6 @@ const getUserId = async (): Promise<string> => {
     console.error('Failed to get LINE user ID:', error);
     // エラーが発生した場合は、ログイン状態を確認
     try {
-      // @ts-expect-error - window.liff is dynamically loaded and may not be available
       if (typeof window !== 'undefined' && window.liff && window.liff.isLoggedIn()) {
         // ログイン済みだがプロフィール取得に失敗した場合
         return 'logged_in_user';
