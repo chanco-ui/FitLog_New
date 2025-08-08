@@ -1,13 +1,32 @@
 import { supabase } from './supabase';
 import { Workout, WeightRecord } from '@/types';
+import { getProfile } from './liff';
 
 // ユーザーIDを動的に取得する関数
-const getUserId = (): string => {
-  // LINE認証が利用可能な場合はLINEユーザーIDを使用
-  if (typeof window !== 'undefined' && window.liff) {
-    return window.liff.getProfile?.()?.then((profile: any) => profile.userId) || 'temp_user_123';
+const getUserId = async (): Promise<string> => {
+  try {
+    // LINE認証が利用可能な場合はLINEユーザーIDを使用
+    const profile = await getProfile();
+    if (profile && profile.userId) {
+      return profile.userId;
+    }
+  } catch (error) {
+    console.error('Failed to get LINE user ID:', error);
+    // エラーが発生した場合は、ログイン状態を確認
+    try {
+      // @ts-expect-error - window.liff is dynamically loaded and may not be available
+      if (typeof window !== 'undefined' && window.liff && window.liff.isLoggedIn()) {
+        // ログイン済みだがプロフィール取得に失敗した場合
+        return 'logged_in_user';
+      }
+    } catch (innerError) {
+      console.error('Failed to check login status:', innerError);
+    }
   }
-  return 'temp_user_123';
+  
+  // LINE認証が利用できない場合はランダムなIDを生成
+  const randomId = Math.random().toString(36).substring(2, 15);
+  return `temp_user_${randomId}`;
 };
 
 export const databaseService = {

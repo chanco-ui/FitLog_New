@@ -1,58 +1,61 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 import { useAppContext } from '@/context/AppContext';
+import { useState } from 'react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 
 export default function WeightPage() {
   const router = useRouter();
-  const { addWeight, getWeightForDate, weights } = useAppContext();
-  
-  const today = format(new Date(), 'yyyy-MM-dd');
-  const todayWeight = getWeightForDate(today);
-  
-  const [weight, setWeight] = useState(todayWeight?.weight.toString() || '');
-  const [error, setError] = useState('');
-
-  const handleSave = async () => {
-    const weightValue = parseFloat(weight);
-    
-    if (!weight || isNaN(weightValue)) {
-      setError('有効な体重を入力してください');
-      return;
-    }
-    
-    if (weightValue < 30 || weightValue > 300) {
-      setError('体重は30kg〜300kgの範囲で入力してください');
-      return;
-    }
-
-    try {
-      await addWeight({
-        weight: weightValue,
-        date: today,
-      });
-
-      router.push('/');
-    } catch (error) {
-      console.error('Error saving weight:', error);
-      setError('保存中にエラーが発生しました');
-    }
-  };
+  const { addWeight, getWeightForDate } = useAppContext();
+  const [weight, setWeight] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleBack = () => {
     router.back();
   };
 
-  const recentWeights = weights
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 5);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!weight || isNaN(Number(weight))) {
+      alert('有効な体重を入力してください');
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      const today = format(new Date(), 'yyyy-MM-dd');
+      
+      // 今日の体重が既に記録されているかチェック
+      const existingWeight = await getWeightForDate(today);
+      if (existingWeight) {
+        if (!confirm('今日の体重は既に記録されています。上書きしますか？')) {
+          setLoading(false);
+          return;
+        }
+      }
+
+      await addWeight({
+        weight: Number(weight),
+        date: today,
+      });
+
+      setWeight('');
+      alert('体重を記録しました！');
+      router.push('/');
+    } catch (error) {
+      console.error('Failed to add weight:', error);
+      alert('体重の記録に失敗しました');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen">
@@ -62,70 +65,35 @@ export default function WeightPage() {
         onBack={handleBack}
       />
       
-      <main className="p-4 space-y-6">
-        {/* 今日の日付 */}
-        <Card>
-          <div className="text-center">
-            <h2 className="text-lg font-semibold text-black">
-              {format(new Date(), 'yyyy年M月d日', { locale: ja })}
-            </h2>
-            <p className="text-sm text-gray-700 mt-1">今日の体重を記録しましょう</p>
-          </div>
-        </Card>
-
-        {/* 既存記録の表示 */}
-        {todayWeight && (
-          <Card className="bg-blue-50 border-blue-200">
-            <div className="text-center">
-              <p className="text-sm text-blue-600">今日の記録</p>
-              <p className="text-2xl font-bold text-blue-800">{todayWeight.weight}kg</p>
+      <main className="p-4">
+        <Card className="p-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label htmlFor="weight" className="block text-sm font-medium text-black mb-2">
+                体重 (kg)
+              </label>
+              <input
+                type="number"
+                id="weight"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+                placeholder="例: 65.5"
+                step="0.1"
+                min="0"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              />
             </div>
-          </Card>
-        )}
-
-        {/* 体重入力フォーム */}
-        <Card>
-          <div className="space-y-4">
-            <Input
-              label="体重 (kg)"
-              type="number"
-              value={weight}
-              onChange={(e) => {
-                setWeight(e.target.value);
-                setError('');
-              }}
-              placeholder="例: 70.5"
-              error={error}
-            />
             
             <Button 
-              onClick={handleSave}
+              type="submit" 
               className="w-full"
-              disabled={!weight}
+              disabled={loading}
             >
-              保存
+              {loading ? '記録中...' : '記録する'}
             </Button>
-          </div>
+          </form>
         </Card>
-
-        {/* 最近の記録 */}
-        {recentWeights.length > 0 && (
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-black">最近の記録</h3>
-            {recentWeights.map((weightRecord) => (
-              <Card key={weightRecord.id} className="p-3">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="font-medium text-black">{weightRecord.weight}kg</p>
-                  </div>
-                                  <p className="text-sm text-gray-600">
-                  {format(new Date(weightRecord.date), 'M/d', { locale: ja })}
-                </p>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
       </main>
     </div>
   );

@@ -28,6 +28,13 @@ ChartJS.register(
   Legend
 );
 
+interface TooltipContext {
+  dataIndex: number;
+  parsed: {
+    y: number;
+  };
+}
+
 export default function WeightHistoryPage() {
   const router = useRouter();
   const { weights } = useAppContext();
@@ -76,12 +83,12 @@ export default function WeightHistoryPage() {
         borderColor: 'rgb(59, 130, 246)',
         borderWidth: 1,
         callbacks: {
-          title: function(context: any) {
+          title: function(context: TooltipContext[]) {
             const index = context[0].dataIndex;
             const weight = sortedWeights[index];
             return format(new Date(weight.date), 'yyyy年M月d日', { locale: ja });
           },
-          label: function(context: any) {
+          label: function(context: TooltipContext) {
             return `体重: ${context.parsed.y}kg`;
           },
         },
@@ -108,7 +115,7 @@ export default function WeightHistoryPage() {
           font: {
             size: 12,
           },
-          callback: function(value: any) {
+          callback: function(value: number) {
             return value + 'kg';
           },
         },
