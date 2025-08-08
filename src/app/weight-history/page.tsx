@@ -15,6 +15,7 @@ import {
   Title,
   Tooltip,
   Legend,
+  ChartOptions,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 
@@ -69,7 +70,7 @@ export default function WeightHistoryPage() {
     ],
   };
 
-  const chartOptions = {
+  const chartOptions: ChartOptions<'line'> = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -115,8 +116,8 @@ export default function WeightHistoryPage() {
           font: {
             size: 12,
           },
-          callback: function(value: number) {
-            return value + 'kg';
+          callback: function(tickValue: string | number) {
+            return tickValue + 'kg';
           },
         },
       },
