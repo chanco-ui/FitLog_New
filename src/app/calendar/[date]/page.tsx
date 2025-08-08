@@ -7,6 +7,8 @@ import { Card } from '@/components/ui/Card';
 import { useAppContext } from '@/context/AppContext';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import { useState, useEffect } from 'react';
+import { Workout, WeightRecord } from '@/types';
 
 interface DateDetailPageProps {
   params: Promise<{
@@ -19,8 +21,28 @@ export default function DateDetailPage({ params }: DateDetailPageProps) {
   const { getWorkoutsForDate, getWeightForDate } = useAppContext();
   
   const { date } = use(params);
-  const workouts = getWorkoutsForDate(date);
-  const weight = getWeightForDate(date);
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [weight, setWeight] = useState<WeightRecord | undefined>(undefined);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [workoutsData, weightData] = await Promise.all([
+          getWorkoutsForDate(date),
+          getWeightForDate(date),
+        ]);
+        setWorkouts(workoutsData);
+        setWeight(weightData);
+      } catch (error) {
+        console.error('Failed to load data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [date, getWorkoutsForDate, getWeightForDate]);
 
   const handleBack = () => {
     router.back();
@@ -29,6 +51,21 @@ export default function DateDetailPage({ params }: DateDetailPageProps) {
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), 'yyyy年M月d日 (EEEE)', { locale: ja });
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen">
+        <Header 
+          title={formatDate(date)}
+          showBackButton 
+          onBack={handleBack}
+        />
+        <main className="p-4">
+          <div className="text-center text-gray-600">読み込み中...</div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -43,8 +80,8 @@ export default function DateDetailPage({ params }: DateDetailPageProps) {
         {weight && (
           <Card>
             <div className="text-center">
-                          <h2 className="text-lg font-semibold mb-2 text-black">体重記録</h2>
-            <p className="text-3xl font-bold text-blue-600">{weight.weight}kg</p>
+              <h2 className="text-lg font-semibold mb-2 text-black">体重記録</h2>
+              <p className="text-3xl font-bold text-blue-600">{weight.weight}kg</p>
             </div>
           </Card>
         )}
