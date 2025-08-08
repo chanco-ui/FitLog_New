@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { Card } from '@/components/ui/Card';
@@ -13,7 +13,7 @@ import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { Plus, Trash2 } from 'lucide-react';
 
-export default function WorkoutPage() {
+function WorkoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { addWorkout } = useAppContext();
@@ -168,5 +168,28 @@ export default function WorkoutPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen">
+      <Header 
+        title="ワークアウト"
+        showBackButton 
+        onBack={() => window.history.back()}
+      />
+      <main className="p-4">
+        <div className="text-center text-gray-600">読み込み中...</div>
+      </main>
+    </div>
+  );
+}
+
+export default function WorkoutPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <WorkoutContent />
+    </Suspense>
   );
 } 
