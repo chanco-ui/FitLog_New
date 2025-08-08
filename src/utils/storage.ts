@@ -1,60 +1,59 @@
 import { Workout, WeightRecord } from '@/types';
 
-const WORKOUTS_KEY = 'fitlog_workouts';
-const WEIGHTS_KEY = 'fitlog_weights';
+// ローカルストレージのキー
+const WORKOUTS_KEY = 'workouts';
+const WEIGHTS_KEY = 'weights';
 
-export const loadWorkouts = (): Workout[] => {
+// ローカルストレージからデータを取得
+export const getFromStorage = <T>(key: string): T[] => {
   if (typeof window === 'undefined') return [];
   
   try {
-    const stored = localStorage.getItem(WORKOUTS_KEY);
-    if (!stored) return [];
-    
-    const workouts = JSON.parse(stored);
-    return workouts.map((workout: any) => ({
-      ...workout,
-      createdAt: new Date(workout.createdAt)
-    }));
+    const data = localStorage.getItem(key);
+    return data ? JSON.parse(data) : [];
   } catch (error) {
-    console.error('Failed to load workouts:', error);
+    console.error(`Failed to get data from storage for key: ${key}`, error);
     return [];
   }
 };
 
-export const saveWorkouts = (workouts: Workout[]): void => {
+// ローカルストレージにデータを保存
+export const saveToStorage = <T>(key: string, data: T[]): void => {
   if (typeof window === 'undefined') return;
   
   try {
-    localStorage.setItem(WORKOUTS_KEY, JSON.stringify(workouts));
+    localStorage.setItem(key, JSON.stringify(data));
   } catch (error) {
-    console.error('Failed to save workouts:', error);
+    console.error(`Failed to save data to storage for key: ${key}`, error);
   }
 };
 
-export const loadWeights = (): WeightRecord[] => {
-  if (typeof window === 'undefined') return [];
-  
-  try {
-    const stored = localStorage.getItem(WEIGHTS_KEY);
-    if (!stored) return [];
-    
-    const weights = JSON.parse(stored);
-    return weights.map((weight: any) => ({
-      ...weight,
-      createdAt: new Date(weight.createdAt)
-    }));
-  } catch (error) {
-    console.error('Failed to load weights:', error);
-    return [];
-  }
+// ワークアウト関連
+export const getWorkoutsFromStorage = (): Workout[] => {
+  return getFromStorage<Workout>(WORKOUTS_KEY);
 };
 
-export const saveWeights = (weights: WeightRecord[]): void => {
-  if (typeof window === 'undefined') return;
-  
-  try {
-    localStorage.setItem(WEIGHTS_KEY, JSON.stringify(weights));
-  } catch (error) {
-    console.error('Failed to save weights:', error);
-  }
+export const saveWorkoutsToStorage = (workouts: Workout[]): void => {
+  saveToStorage(WORKOUTS_KEY, workouts);
+};
+
+export const addWorkoutToStorage = (workout: Workout): void => {
+  const workouts = getWorkoutsFromStorage();
+  workouts.unshift(workout);
+  saveWorkoutsToStorage(workouts);
+};
+
+// 体重関連
+export const getWeightsFromStorage = (): WeightRecord[] => {
+  return getFromStorage<WeightRecord>(WEIGHTS_KEY);
+};
+
+export const saveWeightsToStorage = (weights: WeightRecord[]): void => {
+  saveToStorage(WEIGHTS_KEY, weights);
+};
+
+export const addWeightToStorage = (weight: WeightRecord): void => {
+  const weights = getWeightsFromStorage();
+  weights.unshift(weight);
+  saveWeightsToStorage(weights);
 }; 

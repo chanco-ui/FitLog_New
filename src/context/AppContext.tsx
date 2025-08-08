@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Workout, WeightRecord, Exercise } from '@/types';
+import { Workout, WeightRecord } from '@/types';
 import { databaseService } from '@/lib/database';
 
 interface AppContextType {
@@ -10,9 +10,8 @@ interface AppContextType {
   loading: boolean;
   addWorkout: (workout: Omit<Workout, 'id' | 'createdAt'>) => Promise<void>;
   addWeight: (weight: Omit<WeightRecord, 'id' | 'createdAt'>) => Promise<void>;
-  getWorkoutsForDate: (date: string) => Workout[];
-  getWeightForDate: (date: string) => WeightRecord | undefined;
-  refreshData: () => Promise<void>;
+  getWorkoutsForDate: (date: string) => Promise<Workout[]>;
+  getWeightForDate: (date: string) => Promise<WeightRecord | undefined>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -20,7 +19,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const useAppContext = () => {
   const context = useContext(AppContext);
   if (!context) {
-    throw new Error('useAppContext must be used within AppProvider');
+    throw new Error('useAppContext must be used within an AppProvider');
   }
   return context;
 };
@@ -44,7 +43,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       setWorkouts(workoutsData);
       setWeights(weightsData);
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error('Failed to load data:', error);
     } finally {
       setLoading(false);
     }
@@ -59,7 +58,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       await databaseService.addWorkout(workout);
       await loadData(); // データを再読み込み
     } catch (error) {
-      console.error('Error adding workout:', error);
+      console.error('Failed to add workout:', error);
       throw error;
     }
   };
@@ -69,21 +68,17 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       await databaseService.addWeight(weight);
       await loadData(); // データを再読み込み
     } catch (error) {
-      console.error('Error adding weight:', error);
+      console.error('Failed to add weight:', error);
       throw error;
     }
   };
 
-  const getWorkoutsForDate = (date: string): Workout[] => {
-    return workouts.filter(workout => workout.date === date);
+  const getWorkoutsForDate = async (date: string): Promise<Workout[]> => {
+    return await databaseService.getWorkoutsForDate(date);
   };
 
-  const getWeightForDate = (date: string): WeightRecord | undefined => {
-    return weights.find(weight => weight.date === date);
-  };
-
-  const refreshData = async () => {
-    await loadData();
+  const getWeightForDate = async (date: string): Promise<WeightRecord | undefined> => {
+    return await databaseService.getWeightForDate(date);
   };
 
   const value: AppContextType = {
@@ -94,12 +89,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     addWeight,
     getWorkoutsForDate,
     getWeightForDate,
-    refreshData,
   };
 
-  return (
-    <AppContext.Provider value={value}>
-      {children}
-    </AppContext.Provider>
-  );
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }; 
