@@ -3,9 +3,9 @@
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { Card } from '@/components/ui/Card';
-import { EXERCISES } from '@/constants/exercises';
+import { EXERCISE_CATEGORIES } from '@/constants/exercises';
 import { 
-  Dumbbell, 
+  Heart, 
   Activity, 
   Zap, 
   ArrowUp, 
@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 const iconMap = {
-  Dumbbell,
+  Heart,
   Activity,
   Zap,
   ArrowUp,
@@ -25,8 +25,8 @@ const iconMap = {
 export default function ExercisesPage() {
   const router = useRouter();
 
-  const handleExerciseSelect = (exercise: typeof EXERCISES[0]) => {
-    router.push(`/workout?exercise=${exercise.id}`);
+  const handleCategorySelect = (categoryId: string) => {
+    router.push(`/exercises/${categoryId}`);
   };
 
   const handleBack = () => {
@@ -43,23 +43,23 @@ export default function ExercisesPage() {
       
       <main className="p-4">
         <div className="grid grid-cols-1 gap-4">
-          {EXERCISES.map((exercise) => {
-            const IconComponent = iconMap[exercise.icon as keyof typeof iconMap];
+          {EXERCISE_CATEGORIES.map((category) => {
+            const IconComponent = iconMap[category.icon as keyof typeof iconMap];
             
             return (
               <Card 
-                key={exercise.id}
+                key={category.id}
                 className="p-4 hover:shadow-md transition-shadow cursor-pointer border-gray-200"
-                onClick={() => handleExerciseSelect(exercise)}
+                onClick={() => handleCategorySelect(category.id)}
               >
                 <div className="flex items-center space-x-4">
                   <div className="flex-shrink-0">
                     <IconComponent className="w-8 h-8 text-gray-700" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-lg text-black">{exercise.muscle}</h3>
-                    <p className="text-sm text-gray-800 font-medium">{exercise.name}</p>
-                    <p className="text-sm text-gray-700 mt-1">{exercise.description}</p>
+                    <h3 className="font-semibold text-lg text-black">{category.name}</h3>
+                    <p className="text-sm text-gray-700 mt-1">{category.description}</p>
+                    <p className="text-xs text-gray-500 mt-1">{category.exercises.length}種目</p>
                   </div>
                 </div>
               </Card>

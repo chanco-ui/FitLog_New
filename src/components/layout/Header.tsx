@@ -1,16 +1,31 @@
 import React from 'react';
-import { Dumbbell } from 'lucide-react';
+import { Dumbbell, LogOut } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import Image from 'next/image';
+
+interface LineUser {
+  userId: string;
+  displayName: string;
+  pictureUrl?: string;
+  statusMessage?: string;
+}
 
 interface HeaderProps {
   title: string;
   showBackButton?: boolean;
   onBack?: () => void;
+  showUserInfo?: boolean;
+  user?: LineUser;
+  onLogout?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
   title, 
   showBackButton = false, 
-  onBack 
+  onBack,
+  showUserInfo = false,
+  user,
+  onLogout
 }) => {
   return (
     <header className="flex items-center justify-between py-6 px-6 border-b border-gray-200">
@@ -33,6 +48,34 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
       </div>
+
+      {showUserInfo && user && (
+        <div className="flex items-center space-x-3">
+          {user.pictureUrl && (
+            <Image 
+              src={user.pictureUrl} 
+              alt={user.displayName}
+              width={32}
+              height={32}
+              className="rounded-full"
+            />
+          )}
+          <div className="text-right">
+            <p className="text-sm font-medium text-black">{user.displayName}</p>
+            {onLogout && (
+              <Button 
+                onClick={onLogout}
+                variant="outline"
+                size="sm"
+                className="mt-1"
+              >
+                <LogOut className="w-4 h-4 mr-1" />
+                ログアウト
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   );
 }; 

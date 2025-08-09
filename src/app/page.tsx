@@ -1,16 +1,19 @@
 'use client';
 
-import Link from 'next/link';
+import { useLineAuth } from '@/hooks/useLineAuth';
+import { AppProvider } from '@/context/AppContext';
 import { Header } from '@/components/layout/Header';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { useAppContext } from '@/context/AppContext';
-import { useLineAuth } from '@/hooks/useLineAuth';
-import { format } from 'date-fns';
-import { ja } from 'date-fns/locale';
-import { Play, Scale, Calendar, History, TrendingUp } from 'lucide-react';
+import { 
+  Dumbbell, 
+  Activity, 
+  TrendingUp, 
+  Calendar,
+  LogIn
+} from 'lucide-react';
+import Image from 'next/image';
 
-// SSRを無効にする
 export const dynamic = 'force-dynamic';
 
 export default function HomePage() {
@@ -18,9 +21,9 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">読み込み中...</p>
         </div>
       </div>
@@ -29,12 +32,10 @@ export default function HomePage() {
 
   if (!initialized) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600 mb-4">アプリの初期化に失敗しました</p>
-          <Button onClick={() => window.location.reload()}>
-            再読み込み
-          </Button>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">初期化中...</p>
         </div>
       </div>
     );
@@ -42,25 +43,25 @@ export default function HomePage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-white">
-        <Header title="フィットログ" />
-        
-        <main className="p-6 flex items-center justify-center min-h-[calc(100vh-80px)]">
-          <div className="text-center space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-black mb-2">FitLog</h2>
-              <p className="text-gray-600">シンプル筋トレログ</p>
-            </div>
-            
-            <div className="space-y-4">
-              <p className="text-gray-600">LINEアカウントでログインしてください</p>
+      <div className="min-h-screen">
+        <Header title="FitLog" />
+        <main className="p-4">
+          <div className="max-w-md mx-auto mt-8">
+            <Card className="p-6 text-center">
+              <div className="mb-6">
+                <Dumbbell className="w-16 h-16 text-blue-600 mx-auto mb-4" />
+                <h1 className="text-2xl font-bold text-black mb-2">FitLog</h1>
+                <p className="text-gray-600">LINEでログインしてトレーニングを記録しましょう</p>
+              </div>
+              
               <Button 
                 onClick={login}
-                className="w-full h-14 text-lg font-medium bg-green-500 hover:bg-green-600"
+                className="w-full flex items-center justify-center space-x-2"
               >
-                LINEでログイン
+                <LogIn className="w-5 h-5" />
+                <span>LINEでログイン</span>
               </Button>
-            </div>
+            </Card>
           </div>
         </main>
       </div>
@@ -68,160 +69,83 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <Header title="フィットログ" />
-      
-      <main className="p-6 space-y-6">
-        {/* ユーザー情報 */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            {user.pictureUrl && (
-              <img 
-                src={user.pictureUrl} 
-                alt={user.displayName}
-                className="w-10 h-10 rounded-full"
-              />
-            )}
-            <div>
-              <p className="font-medium text-black">{user.displayName}</p>
-              <p className="text-sm text-gray-600">ようこそ！</p>
+    <AppProvider>
+      <div className="min-h-screen">
+        <Header 
+          title="FitLog" 
+          showUserInfo
+          user={user}
+          onLogout={logout}
+        />
+        
+        <main className="p-4">
+          <div className="mb-6">
+            <div className="flex items-center space-x-3 mb-2">
+              {user.pictureUrl && (
+                <Image 
+                  src={user.pictureUrl} 
+                  alt={user.displayName}
+                  width={40}
+                  height={40}
+                  className="rounded-full"
+                />
+              )}
+              <div>
+                <h2 className="text-lg font-semibold text-black">
+                  {user.displayName}さん、お疲れ様です！
+                </h2>
+                <p className="text-sm text-gray-600">今日もトレーニング頑張りましょう</p>
+              </div>
             </div>
           </div>
-          <Button 
-            onClick={logout}
-            variant="outline"
-            size="sm"
-          >
-            ログアウト
-          </Button>
-        </div>
 
-        {/* サブタイトル */}
-        <div className="text-center mb-8">
-          <p className="text-gray-600 text-sm">シンプル筋トレログ</p>
-        </div>
-
-        {/* メインナビゲーションボタン */}
-        <div className="space-y-4">
-          <Link href="/exercises">
-            <Button 
-              className="w-full h-14 text-lg font-medium flex items-center justify-center space-x-3 bg-black text-white hover:bg-gray-800"
+          <div className="grid grid-cols-2 gap-4">
+            <Card 
+              className="p-4 hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => window.location.href = '/exercises'}
             >
-              <Play className="w-5 h-5" />
-              <span>トレーニングを始める</span>
-            </Button>
-          </Link>
-          
-          <Link href="/weight">
-            <Button 
-              variant="outline"
-              className="w-full h-14 text-lg font-medium flex items-center justify-center space-x-3 border-black text-black hover:bg-gray-50"
-            >
-              <Scale className="w-5 h-5" />
-              <span>体重を記録</span>
-            </Button>
-          </Link>
-          
-          <Link href="/calendar">
-            <Button 
-              variant="outline"
-              className="w-full h-14 text-lg font-medium flex items-center justify-center space-x-3 border-black text-black hover:bg-gray-50"
-            >
-              <Calendar className="w-5 h-5" />
-              <span>カレンダーを見る</span>
-            </Button>
-          </Link>
-          
-          <Link href="/history">
-            <Button 
-              variant="outline"
-              className="w-full h-14 text-lg font-medium flex items-center justify-center space-x-3 border-black text-black hover:bg-gray-50"
-            >
-              <History className="w-5 h-5" />
-              <span>履歴を見る</span>
-            </Button>
-          </Link>
-          
-          <Link href="/weight-history">
-            <Button 
-              variant="outline"
-              className="w-full h-14 text-lg font-medium flex items-center justify-center space-x-3 border-black text-black hover:bg-gray-50"
-            >
-              <TrendingUp className="w-5 h-5" />
-              <span>体重履歴</span>
-            </Button>
-          </Link>
-        </div>
-
-        {/* 最近の記録 */}
-        <RecentRecords />
-      </main>
-    </div>
-  );
-}
-
-function RecentRecords() {
-  const { workouts, weights } = useAppContext();
-  
-  const recentWorkouts = workouts
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 2);
-    
-  const recentWeights = weights
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 2);
-
-  return (
-    <div className="space-y-4 mt-8">
-      <h2 className="text-lg font-semibold text-black">最近の記録</h2>
-      
-      {/* 最近のワークアウト */}
-      {recentWorkouts.length > 0 && (
-        <div className="space-y-2">
-          <h3 className="text-sm font-medium text-gray-700">ワークアウト</h3>
-          {recentWorkouts.map((workout) => (
-            <Card key={workout.id} className="p-3">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="font-medium text-black">{workout.exercise.name}</p>
-                  <p className="text-sm text-gray-700">
-                    {workout.sets.length}セット
-                  </p>
-                </div>
-                <p className="text-sm text-gray-600">
-                  {format(new Date(workout.date), 'M/d', { locale: ja })}
-                </p>
+              <div className="text-center">
+                <Dumbbell className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                <h3 className="font-semibold text-black">トレーニング</h3>
+                <p className="text-sm text-gray-600">ワークアウトを記録</p>
               </div>
             </Card>
-          ))}
-        </div>
-      )}
 
-      {/* 最近の体重記録 */}
-      {recentWeights.length > 0 && (
-        <div className="space-y-2">
-          <h3 className="text-sm font-medium text-gray-700">体重</h3>
-          {recentWeights.map((weight) => (
-            <Card key={weight.id} className="p-3">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="font-medium text-black">{weight.weight}kg</p>
-                </div>
-                <p className="text-sm text-gray-600">
-                  {format(new Date(weight.date), 'M/d', { locale: ja })}
-                </p>
+            <Card 
+              className="p-4 hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => window.location.href = '/weight'}
+            >
+              <div className="text-center">
+                <TrendingUp className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                <h3 className="font-semibold text-black">体重記録</h3>
+                <p className="text-sm text-gray-600">体重を記録</p>
               </div>
             </Card>
-          ))}
-        </div>
-      )}
 
-      {recentWorkouts.length === 0 && recentWeights.length === 0 && (
-        <Card className="p-6 text-center text-gray-600">
-          <p>まだ記録がありません</p>
-          <p className="text-sm mt-1">トレーニングや体重を記録してみましょう！</p>
-        </Card>
-      )}
-    </div>
+            <Card 
+              className="p-4 hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => window.location.href = '/calendar'}
+            >
+              <div className="text-center">
+                <Calendar className="w-8 h-8 text-purple-600 mx-auto mb-2" />
+                <h3 className="font-semibold text-black">カレンダー</h3>
+                <p className="text-sm text-gray-600">記録を確認</p>
+              </div>
+            </Card>
+
+            <Card 
+              className="p-4 hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => window.location.href = '/weight-history'}
+            >
+              <div className="text-center">
+                <Activity className="w-8 h-8 text-orange-600 mx-auto mb-2" />
+                <h3 className="font-semibold text-black">体重履歴</h3>
+                <p className="text-sm text-gray-600">推移を確認</p>
+              </div>
+            </Card>
+          </div>
+        </main>
+      </div>
+    </AppProvider>
   );
 }
